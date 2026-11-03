@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Dias Acumulados</title>
+    <style>
+        /* Estilos Gerais (Desktop) */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 20px;
+            color: #333;
+        }
+
+        .controls {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .controls label { font-weight: bold; }
+
+        .controls input {
+            padding: 8px;
+            font-size: 16px;
+            width: 100px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .controls button {
+            padding: 10px 15px;
+            font-size: 15px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .controls button:hover { background-color: #0056b3; }
+        .controls button#printBtn { background-color: #28a745; }
+        .controls button#printBtn:hover { background-color: #218838; }
+        .controls button#selectAllBtn { background-color: #17a2b8; }
+        .controls button#selectAllBtn:hover { background-color: #138496; }
+        .controls button#clearBtn { background-color: #dc3545; }
+        .controls button#clearBtn:hover { background-color: #c82333; }
+        
+        .controls button#undoBtn { background-color: #ffc107; color: #212529; }
+        .controls button#undoBtn:hover { background-color: #e0a800; }
+        .controls button#undoBtn:disabled { background-color: #e2e6ea; color: #6c757d; cursor: not-allowed; }
+
+        .table-wrapper {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        table {
+            border-collapse: collapse;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 850px;
+            table-layout: fixed;
+        }
+
+        th, td {
+            border: 1px solid #a0a0a0;
+            padding: 10px;
+            text-align: center;
+            width: 10%;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .day-cell {
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .day-cell:hover { background-color: #e2e6ea; }
+
+        .day-cell.selected {
+            background-color: #d1d5db;
+            color: #6b7280;
+            cursor: not-allowed;
+            pointer-events: none;
+            font-weight: bold;
+        }
+
+        /* Linha de Totais */
+        .totals-row td {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            color: #000;
+            height: 40px;
+            font-size: 14px;
+        }
+
+        .acumulado-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            height: 100%;
+            padding-bottom: 5px;
+            min-width: 120px;
+        }
+
+        .acumulado-title {
+            font-weight: bold;
+            font-size: 12px;
+            text-align: left;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .acumulado-value {
+            font-weight: bold;
+            font-size: 16px;
+            text-align: left;
+            color: #0056b3;
+        }
+
+        /* =========================================
+           ESTILOS EXCLUSIVOS PARA MOBILE (CELULAR)
+           ========================================= */
+        @media screen and (max-width: 768px) {
+            body { margin: 10px; }
+
+            .controls {
+                flex-direction: column;
+                padding: 15px;
+            }
+
+            .controls > div {
+                width: 100%;
+                display: flex;
+                gap: 10px;
+            }
+
+            .controls label { align-self: flex-start; }
+            .controls input { width: 100%; box-sizing: border-box; }
+
+            .buttons-container {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px !important;
+            }
+
+            .controls button {
+                width: 100%;
+                padding: 12px 5px;
+                font-size: 13px;
+                margin: 0;
+            }
+
+            .table-wrapper {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            table { max-width: 100%; }
+
+            th, td {
+                padding: 8px 2px;
+                font-size: 12px;
+                width: 10%;
+            }
+
+            /* Ajuste fino na linha de totais para celular */
+            .totals-row td {
+                font-size: 11px; /* Fonte ligeiramente menor para garantir que caiba */
+                height: 35px;
+                padding: 0 1px; /* Remove padding lateral extra */
+            }
+
+            .acumulado-box {
+                width: 100%;
+                padding: 15px;
+                background-color: #fff;
+                border-radius: 8px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                box-sizing: border-box;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .acumulado-title {
+                text-align: center;
+                font-size: 14px;
+                margin-bottom: 5px;
+            }
+
+            .acumulado-value {
+                text-align: center;
+                font-size: 24px;
+                color: #28a745;
+            }
+        }
+
+        /* Configurações de Impressão em A4 */
+        @media print {
+            @page { size: A4 portrait; margin: 1cm; }
+            body { background-color: #fff; margin: 0; }
+            .controls { display: none; }
+            .table-wrapper { gap: 5px; flex-direction: row; }
+            table { box-shadow: none; max-width: 100%; page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+            th, td { padding: 6px; font-size: 12px; }
+            thead { display: table-header-group; }
+            tfoot { display: table-footer-group; }
+            .acumulado-box { width: auto; box-shadow: none; align-items: flex-end; padding: 0; }
+            .acumulado-title, .acumulado-value { text-align: left; font-size: 14px; color: #000; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <label for="daysInput">Quantidade de dias:</label>
+        <input type="number" id="daysInput" value="100" min="1" max="1000">
+        
+        <div class="buttons-container" style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button id="generateBtn" onclick="handleGenerate()">Gerar Grade</button>
+            <button id="undoBtn" onclick="handleUndo()" disabled>Desfazer</button>
+            <button id="selectAllBtn" onclick="handleSelectAll()">Marcar Todos</button>
+            <button id="clearBtn" onclick="handleClear()">Limpar Tudo</button>
+            <button id="printBtn" onclick="window.print()" style="grid-column: span 2;">Imprimir / Salvar PDF</button>
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <table id="daysTable">
+            <thead>
+                <tr>
+                    <th colspan="10" style="padding: 15px; font-size: 16px;">DIAS ACUMULADOS</th>
+                </tr>
+            </thead>
+            <tbody id="daysBody">
+                <!-- Preenchido via JS -->
+            </tbody>
+            <tfoot>
+                <tr class="totals-row" id="totalsRow">
+                    <!-- Preenchido via JS -->
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="acumulado-box">
+            <div class="acumulado-title">ACUMULADO</div>
+            <div class="acumulado-value" id="grandTotalDisplay">R$ 0,00</div>
+        </div>
+    </div>
+
+    <script>
+        let totalDays = 100;
+        let selectedDays = new Set();
+        let colTotals = new Array(10).fill(0);
+        let grandTotal = 0;
+        
+        let undoStack = []; 
+        const MAX_UNDO = 50; 
+
+        // Formata apenas o número inteiro (sem decimais) para as colunas
+        function formatNumberOnly(value) {
+            return value.toLocaleString('pt-BR', { 
+                minimumFractionDigits: 0, 
+                maximumFractionDigits: 0 
+            });
+        }
+
+        // Formata com R$ e decimais para o total geral
+        function formatCurrency(value) {
+            return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function saveState() {
+            const state = {
+                days: totalDays,
+                selected: Array.from(selectedDays)
+            };
+            localStorage.setItem('diasAcumuladosState', JSON.stringify(state));
+        }
+
+        function loadState() {
+            const saved = localStorage.getItem('diasAcumuladosState');
+            if (saved) {
+                const state = JSON.parse(saved);
+                totalDays = state.days;
+                const validSelected = state.selected.filter(day => day <= totalDays);
+                selectedDays = new Set(validSelected);
+                document.getElementById('daysInput').value = totalDays;
+            } else {
+                totalDays = 100;
+                selectedDays = new Set();
+                document.getElementById('daysInput').value = 100;
+            }
+            buildGridDOM();
+            renderState();
+            updateUndoButton();
+        }
+
+        function saveHistory() {
+            undoStack.push(Array.from(selectedDays));
+            if (undoStack.length > MAX_UNDO) {
+                undoStack.shift(); 
+            }
+            updateUndoButton();
+        }
+
+        function updateUndoButton() {
+            const undoBtn = document.getElementById('undoBtn');
+            undoBtn.disabled = undoStack.length === 0;
+        }
+
+        function buildGridDOM() {
+            const tbody = document.getElementById('daysBody');
+            const totalsRow = document.getElementById('totalsRow');
+            tbody.innerHTML = '';
+            totalsRow.innerHTML = '';
+
+            let currentDay = 1;
+            const numRows = Math.ceil(totalDays / 10);
+
+            for (let r = 0; r < numRows; r++) {
+                const tr = document.createElement('tr');
+                for (let c = 0; c < 10; c++) {
+                    const td = document.createElement('td');
+                    if (currentDay <= totalDays) {
+                        td.textContent = currentDay;
+                        td.classList.add('day-cell');
+                        td.dataset.day = currentDay;
+                        
+                        td.addEventListener('click', function() {
+                            handleCellClick(parseInt(this.dataset.day));
+                        });
+                        
+                        currentDay++;
+                    } else {
+                        td.style.backgroundColor = "#f4f4f9";
+                        td.style.border = "1px solid #e0e0e0";
+                    }
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            }
+
+            for (let c = 0; c < 10; c++) {
+                const td = document.createElement('td');
+                td.id = `col-total-${c}`;
+                td.textContent = formatNumberOnly(0); // Apenas o número inteiro
+                totalsRow.appendChild(td);
+            }
+        }
+
+        function renderState() {
+            document.querySelectorAll('.day-cell').forEach(cell => {
+                cell.classList.remove('selected');
+            });
+
+            selectedDays.forEach(day => {
+                const cell = document.querySelector(`.day-cell[data-day="${day}"]`);
+                if (cell) cell.classList.add('selected');
+            });
+
+            colTotals = new Array(10).fill(0);
+            grandTotal = 0;
+
+            selectedDays.forEach(day => {
+                const colIndex = (day - 1) % 10;
+                colTotals[colIndex] += day;
+                grandTotal += day;
+            });
+
+            for (let c = 0; c < 10; c++) {
+                document.getElementById(`col-total-${c}`).textContent = formatNumberOnly(colTotals[c]);
+            }
+            document.getElementById('grandTotalDisplay').textContent = formatCurrency(grandTotal);
+        }
+
+        function handleCellClick(day) {
+            if (selectedDays.has(day)) return;
+            saveHistory(); 
+            selectedDays.add(day);
+            renderState();
+            saveState();
+        }
+
+        function handleGenerate() {
+            const inputVal = parseInt(document.getElementById('daysInput').value);
+            if (isNaN(inputVal) || inputVal <= 0 || inputVal > 1000) {
+                alert("Por favor, insira um número válido de dias (entre 1 e 1000).");
+                return;
+            }
+            totalDays = inputVal;
+            undoStack = [];
+            updateUndoButton();
+            selectedDays.clear();
+            buildGridDOM();
+            renderState();
+            saveState();
+        }
+
+        function handleSelectAll() {
+            if (selectedDays.size === totalDays) return; 
+            saveHistory(); 
+            for (let i = 1; i <= totalDays; i++) {
+                selectedDays.add(i);
+            }
+            renderState();
+            saveState();
+        }
+
+        function handleClear() {
+            if (selectedDays.size === 0) return; 
+            if (confirm("Tem certeza que deseja limpar todas as seleções?")) {
+                saveHistory(); 
+                selectedDays.clear();
+                renderState();
+                saveState();
+            }
+        }
+
+        function handleUndo() {
+            if (undoStack.length > 0) {
+                const previousState = undoStack.pop();
+                selectedDays = new Set(previousState);
+                renderState();
+                saveState();
+                updateUndoButton();
+            }
+        }
+
+        window.onload = () => {
+            loadState();
+        };
+    </script>
+</body>
+</html>
