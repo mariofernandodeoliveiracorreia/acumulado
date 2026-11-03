@@ -5,282 +5,356 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Dias Acumulados</title>
     <style>
-        /* Estilos Gerais (Desktop) */
+        /* Importando uma fonte moderna */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --primary: #3b82f6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --purple: #8b5cf6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
+            font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
             margin: 20px;
-            color: #333;
-        }
-
-        .controls {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
+            color: var(--text-main);
+            -webkit-font-smoothing: antialiased;
             display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
+            flex-direction: column;
+            align-items: center; /* Centraliza tudo na tela */
         }
 
-        .controls label { font-weight: bold; }
+        /* --- Área de Controles --- */
+        .controls {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            margin-bottom: 24px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            width: 100%;
+            max-width: 850px; /* Mesma largura da tabela para alinhar */
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+            font-size: 14px;
+        }
 
         .controls input {
-            padding: 8px;
+            padding: 10px 14px;
             font-size: 16px;
-            width: 100px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            width: 90px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .controls input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .buttons-container {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
         .controls button {
-            padding: 10px 15px;
-            font-size: 15px;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 600;
             cursor: pointer;
             border: none;
-            border-radius: 4px;
-            background-color: #007bff;
+            border-radius: 8px;
             color: white;
-            font-weight: bold;
-            transition: background 0.3s;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
-        .controls button:hover { background-color: #0056b3; }
-        .controls button#printBtn { background-color: #28a745; }
-        .controls button#printBtn:hover { background-color: #218838; }
-        .controls button#selectAllBtn { background-color: #17a2b8; }
-        .controls button#selectAllBtn:hover { background-color: #138496; }
-        .controls button#clearBtn { background-color: #dc3545; }
-        .controls button#clearBtn:hover { background-color: #c82333; }
-        
-        .controls button#undoBtn { background-color: #ffc107; color: #212529; }
-        .controls button#undoBtn:hover { background-color: #e0a800; }
-        .controls button#undoBtn:disabled { background-color: #e2e6ea; color: #6c757d; cursor: not-allowed; }
+        .controls button:active { transform: translateY(1px); }
 
-        .controls button#addDaysBtn { background-color: #6f42c1; }
-        .controls button#addDaysBtn:hover { background-color: #5a32a3; }
-        
-        .controls button#removeDaysBtn { background-color: #fd7e14; }
-        .controls button#removeDaysBtn:hover { background-color: #e36c0a; }
+        /* Cores dos Botões */
+        #addDaysBtn { background-color: var(--success); }
+        #addDaysBtn:hover { background-color: #059669; }
 
+        #removeDaysBtn { background-color: var(--warning); }
+        #removeDaysBtn:hover { background-color: #d97706; }
+
+        #generateBtn { background-color: var(--text-main); }
+        #generateBtn:hover { background-color: #0f172a; }
+
+        #undoBtn { background-color: var(--text-muted); }
+        #undoBtn:hover { background-color: #475569; }
+        #undoBtn:disabled { background-color: #cbd5e1; cursor: not-allowed; transform: none; }
+
+        #selectAllBtn { background-color: var(--purple); }
+        #selectAllBtn:hover { background-color: #7c3aed; }
+
+        #clearBtn { background-color: var(--danger); }
+        #clearBtn:hover { background-color: #dc2626; }
+
+        #printBtn { background-color: var(--primary); }
+        #printBtn:hover { background-color: #2563eb; }
+
+        /* --- Estrutura da Tabela --- */
         .table-wrapper {
             display: flex;
-            align-items: flex-start;
-            gap: 10px;
+            flex-direction: column; /* Muda de linha para coluna */
+            align-items: center;    /* Centraliza os itens */
+            gap: 20px;
+            width: 100%;
+        }
+
+        .table-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            width: 100%;
+            max-width: 850px; /* Largura fixa igual ao card */
         }
 
         table {
             border-collapse: collapse;
-            background-color: #fff;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             width: 100%;
-            max-width: 850px;
             table-layout: fixed;
         }
 
         th, td {
-            border: 1px solid #a0a0a0;
-            padding: 10px;
+            border: 1px solid var(--border-color);
+            padding: 12px 8px;
             text-align: center;
             width: 10%;
-            font-size: 14px;
+            font-size: 15px;
+            font-weight: 500;
         }
 
         th {
-            background-color: #f8f9fa;
-            font-weight: bold;
+            background-color: #f8fafc;
+            color: var(--text-muted);
+            font-weight: 700;
+            font-size: 13px;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-top: none;
+            padding: 16px 8px;
         }
+
+        /* Bordas laterais da tabela */
+        tr td:first-child { border-left: none; }
+        tr td:last-child { border-right: none; }
+        tr:last-child td { border-bottom: none; }
 
         .day-cell {
             cursor: pointer;
             user-select: none;
-            transition: background 0.2s;
+            color: var(--text-main);
+            transition: all 0.15s ease;
         }
 
-        .day-cell:hover { background-color: #e2e6ea; }
+        .day-cell:hover { 
+            background-color: #f8fafc; 
+            color: var(--primary);
+        }
 
+        /* Estado Selecionado */
         .day-cell.selected {
-            background-color: #d1d5db;
-            color: #6b7280;
+            background-color: #eff6ff;
+            color: #1d4ed8;
             cursor: not-allowed;
             pointer-events: none;
-            font-weight: bold;
+            font-weight: 700;
         }
 
+        /* Linha de Totais */
         .totals-row td {
-            background-color: #f8f9fa;
-            font-weight: bold;
-            color: #000;
-            height: 40px;
-            font-size: 14px;
+            background-color: #f8fafc;
+            font-weight: 700;
+            color: var(--text-main);
+            height: 50px;
+            border-bottom: none;
         }
 
+        /* --- Card do Acumulado (Novo Design Horizontal) --- */
         .acumulado-box {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            padding: 20px 30px;
+            width: 100%;
+            max-width: 850px; /* Largura igual à tabela */
             display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            height: 100%;
-            padding-bottom: 5px;
-            min-width: 120px;
+            flex-direction: row; /* Título e valor lado a lado */
+            justify-content: space-between;
+            align-items: center;
+            border-top: 4px solid var(--primary); /* Linha azul no topo */
         }
 
         .acumulado-title {
-            font-weight: bold;
-            font-size: 12px;
-            text-align: left;
-            margin-bottom: 10px;
-            color: #333;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .acumulado-value {
-            font-weight: bold;
-            font-size: 16px;
-            text-align: left;
-            color: #0056b3;
+            font-weight: 800;
+            font-size: 32px;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
         }
 
         /* =========================================
            ESTILOS EXCLUSIVOS PARA MOBILE (CELULAR)
            ========================================= */
         @media screen and (max-width: 768px) {
-            body { margin: 10px; }
+            body { margin: 12px; }
 
             .controls {
                 flex-direction: column;
-                padding: 15px;
+                padding: 16px;
+                gap: 12px;
             }
 
-            .controls > div {
+            .input-group {
+                justify-content: space-between;
                 width: 100%;
-                display: flex;
-                gap: 10px;
             }
 
-            .controls label { align-self: flex-start; }
-            .controls input { width: 100%; box-sizing: border-box; }
+            .controls input { width: 100px; }
 
             .buttons-container {
                 display: grid !important;
                 grid-template-columns: 1fr 1fr;
                 gap: 8px !important;
+                width: 100%;
             }
 
             .controls button {
                 width: 100%;
-                padding: 12px 5px;
+                padding: 12px 4px;
                 font-size: 13px;
-                margin: 0;
             }
 
-            /* AQUI ESTÁ A MÁGICA PARA O BOTÃO DE IMPRIMIR OCUPAR AS DUAS COLUNAS */
-            .controls button#printBtn {
-                grid-column: span 2;
-            }
+            #printBtn { grid-column: span 2; }
 
-            .table-wrapper {
-                flex-direction: column;
-                gap: 15px;
-            }
+            .table-wrapper { gap: 16px; }
 
-            table { max-width: 100%; }
+            th, td { padding: 10px 2px; font-size: 13px; }
+            th { font-size: 11px; }
+            .totals-row td { font-size: 12px; }
 
-            th, td {
-                padding: 8px 2px;
-                font-size: 12px;
-                width: 10%;
-            }
-
-            .totals-row td {
-                font-size: 11px;
-                height: 35px;
-                padding: 0 1px;
-            }
-
+            /* Card do Acumulado no Mobile */
             .acumulado-box {
-                width: 100%;
-                padding: 15px;
-                background-color: #fff;
-                border-radius: 8px;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-                box-sizing: border-box;
-                align-items: center;
+                flex-direction: column; /* Empilha no celular para não esmagar */
                 justify-content: center;
-            }
-
-            .acumulado-title {
                 text-align: center;
-                font-size: 14px;
-                margin-bottom: 5px;
+                padding: 20px;
+                gap: 8px;
             }
 
             .acumulado-value {
-                text-align: center;
-                font-size: 24px;
-                color: #28a745;
+                font-size: 36px;
+                color: var(--primary);
             }
         }
 
         /* Configurações de Impressão em A4 */
         @media print {
             @page { size: A4 portrait; margin: 1cm; }
-            body { background-color: #fff; margin: 0; }
+            body { background-color: #fff; margin: 0; display: block; }
             .controls { display: none; }
-            .table-wrapper { gap: 5px; flex-direction: row; }
-            table { box-shadow: none; max-width: 100%; page-break-inside: auto; }
+            
+            .table-wrapper { gap: 10px; }
+            .table-container, .acumulado-box { box-shadow: none; border: 1px solid #ccc; max-width: 100%; }
+            .acumulado-box { border-top: 2px solid #000; }
+            
+            table { page-break-inside: auto; }
             tr { page-break-inside: avoid; page-break-after: auto; }
             th, td { padding: 6px; font-size: 12px; }
             thead { display: table-header-group; }
             tfoot { display: table-footer-group; }
-            .acumulado-box { width: auto; box-shadow: none; align-items: flex-end; padding: 0; }
-            .acumulado-title, .acumulado-value { text-align: left; font-size: 14px; color: #000; }
+            
+            .acumulado-value { font-size: 24px; }
         }
     </style>
 </head>
 <body>
 
     <div class="controls">
-        <label for="daysInput">Quantidade de dias:</label>
-        <input type="number" id="daysInput" value="100" min="1" max="1000">
+        <div class="input-group">
+            <label for="daysInput">Qtd. Dias:</label>
+            <input type="number" id="daysInput" value="50" min="1" max="1000">
+        </div>
         
-        <div class="buttons-container" style="display:flex; gap:10px; flex-wrap:wrap;">
+        <div class="buttons-container">
             <button id="addDaysBtn" onclick="handleAddDays()">Incluir Dias</button>
             <button id="removeDaysBtn" onclick="handleRemoveDays()">Remover Dias</button>
-            <button id="generateBtn" onclick="handleGenerate()">Gerar Grade (Reiniciar)</button>
+            <button id="generateBtn" onclick="handleGenerate()">Reiniciar</button>
             <button id="undoBtn" onclick="handleUndo()" disabled>Desfazer</button>
             <button id="selectAllBtn" onclick="handleSelectAll()">Marcar Todos</button>
             <button id="clearBtn" onclick="handleClear()">Limpar Tudo</button>
-            <button id="printBtn" onclick="window.print()">Imprimir / Salvar PDF</button>
+            <button id="printBtn" onclick="window.print()">Imprimir / PDF</button>
         </div>
     </div>
 
     <div class="table-wrapper">
-        <table id="daysTable">
-            <thead>
-                <tr>
-                    <th colspan="10" style="padding: 15px; font-size: 16px;">DIAS ACUMULADOS</th>
-                </tr>
-            </thead>
-            <tbody id="daysBody">
-                <!-- Preenchido via JS -->
-            </tbody>
-            <tfoot>
-                <tr class="totals-row" id="totalsRow">
+        <div class="table-container">
+            <table id="daysTable">
+                <thead>
+                    <tr>
+                        <th colspan="10" style="padding: 16px; font-size: 15px; color: var(--text-main);">DIAS ACUMULADOS</th>
+                    </tr>
+                </thead>
+                <tbody id="daysBody">
                     <!-- Preenchido via JS -->
-                </tr>
-            </tfoot>
-        </table>
+                </tbody>
+                <tfoot>
+                    <tr class="totals-row" id="totalsRow">
+                        <!-- Preenchido via JS -->
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
 
         <div class="acumulado-box">
-            <div class="acumulado-title">ACUMULADO</div>
+            <div class="acumulado-title">Total Acumulado</div>
             <div class="acumulado-value" id="grandTotalDisplay">R$ 0,00</div>
         </div>
     </div>
 
     <script>
-        let totalDays = 100;
+        let totalDays = 50;
         let selectedDays = new Set();
         let colTotals = new Array(10).fill(0);
         let grandTotal = 0;
@@ -316,9 +390,9 @@
                 selectedDays = new Set(validSelected);
                 document.getElementById('daysInput').value = totalDays;
             } else {
-                totalDays = 100;
+                totalDays = 50;
                 selectedDays = new Set();
-                document.getElementById('daysInput').value = 100;
+                document.getElementById('daysInput').value = 50;
             }
             buildGridDOM();
             renderState();
@@ -362,8 +436,8 @@
                         
                         currentDay++;
                     } else {
-                        td.style.backgroundColor = "#f4f4f9";
-                        td.style.border = "1px solid #e0e0e0";
+                        td.style.backgroundColor = "#f8fafc";
+                        td.style.border = "1px solid #e2e8f0";
                     }
                     tr.appendChild(td);
                 }
